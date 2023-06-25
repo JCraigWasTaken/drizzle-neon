@@ -1,0 +1,41 @@
+{
+  "name": "drizzle-neon",
+  "version": "1.0.0",
+  "description": "This repository serves as a Node.js TypeScript project that utilizes Drizzle for managing Neon database tables.",
+  "main": "index.ts",
+  "scripts": {
+    "setup": "npm install && gulp setup",
+    "DB:createNewMigration": "npx tsc --noEmit && gulp DB:checkSchemaAndRefreshTestDataFiles && gulp DB:validate-identifiers && rimraf migrations && npx drizzle-kit introspect:pg --config=drizzle.config.ts && gulp DB:addMeta && npx drizzle-kit generate:pg --config=drizzle.config.ts",
+    "DB:checkMigration": "npx tsc --noEmit && gulp DB:checkSchemaAndRefreshTestDataFiles && gulp DB:validate-identifiers && npx drizzle-kit check:pg --config=drizzle.config.ts",
+    "DB:applyMigration": "npm run DB:checkMigration && gulp DB:applyMigration",
+    "DB:refreshTestData": "npx tsc --noEmit && gulp DB:checkSchemaAndRefreshTestDataFiles && gulp DB:validate-identifiers && gulp DB:refreshTestData",
+    "format": "prettier --write .",
+    "precommit": "lint-staged",
+    "test:formatting": "prettier --check ."
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,css,less,scss,html,json,gql,md,yml,angular,vue}": "prettier --write"
+  },
+  "devDependencies": {
+    "@faker-js/faker": "^8.0.2",
+    "dotenv": "^16.1.4",
+    "drizzle-kit": "^0.18.1",
+    "drizzle-orm": "^0.26.5",
+    "gulp": "^4.0.2",
+    "husky": "^8.0.3",
+    "lint-staged": "^13.2.2",
+    "postgres": "^3.3.5",
+    "prettier": "^2.8.8",
+    "rimraf": "^5.0.1",
+    "through2": "^4.0.2",
+    "ts-morph": "^19.0.0",
+    "ts-node": "^10.9.1",
+    "tsx": "^3.12.7",
+    "typescript": "^5.1.3"
+  }
+}

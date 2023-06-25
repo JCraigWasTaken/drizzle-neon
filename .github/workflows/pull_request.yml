@@ -1,0 +1,47 @@
+name: Pull Request Workflow
+
+on:
+  pull_request:
+    branches:
+      - main
+      - dev
+
+env:
+  NODE_VERSION: 18.14.2
+
+jobs:
+  test-and-upload-migration-files-for-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run formatting tests
+        run: |
+          ls -la
+          npm run test:formatting
+          wait
+
+      - name: Set DATABASE_URL
+        run: echo "DATABASE_URL=$(if [[ '${{github.base_ref}}' == 'main' ]]; then echo '${{secrets.DATABASE_URL_PROD}}'; else echo '${{secrets.DATABASE_URL_DEV}}'; fi)" >> $GITHUB_ENV
+
+      - name: Setup and check migrations
+        run: |
+          npm run DB:createNewMigration
+          npm run DB:checkMigration
+
+      - name: Upload migrations folder
+        uses: actions/upload-artifact@v3
+        with:
+          name: migrations
+          path: ./migrations
+          retention-days: 1

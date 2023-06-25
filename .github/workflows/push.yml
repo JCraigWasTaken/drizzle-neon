@@ -1,0 +1,39 @@
+name: Push Workflow
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+
+env:
+  NODE_VERSION: 18.14.2
+
+jobs:
+  apply-migration-changes:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set DATABASE_URL
+        run: echo "DATABASE_URL=$(if [[ '${{github.ref}}' == 'refs/heads/main' ]]; then echo '${{secrets.DATABASE_URL_PROD}}'; else echo '${{secrets.DATABASE_URL_DEV}}'; fi)" >> $GITHUB_ENV
+
+      - name: Run DB:createNewMigration
+        run: npm run DB:createNewMigration
+
+      - name: Run DB:applyMigration
+        run: npm run DB:applyMigration
+
+      - name: Run DB:refreshTestData
+        run: npm run DB:refreshTestData
+        if: github.ref == 'refs/heads/dev'

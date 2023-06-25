@@ -37,7 +37,7 @@ jobs:
       - name: Setup and check migrations
         run: |
           npm run DB:createNewMigration
-          DB:checkMigration
+          npm run DB:checkMigration
 
       - name: Upload migrations folder
         uses: actions/upload-artifact@v3

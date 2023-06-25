@@ -29,22 +29,13 @@ class RefreshEquationTestDataClass extends RefreshTestData<
     let result: number = 0;
 
     switch (operation) {
-      case '+':
-        result = varA + varB;
-        break;
-      case '-':
-        result = varA - varB;
-        break;
-      case '*':
-        result = varA * varB;
-        break;
-      case '/':
+      case 'j':
         // ensure we're not dividing by zero
         if (varB !== 0) {
           result = varA / varB;
         } else {
           // if varB is zero, set operation to '+' and calculate the result
-          operation = '+';
+          operation = 'j';
           result = varA + varB;
         }
         break;

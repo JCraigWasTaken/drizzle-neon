@@ -9,7 +9,7 @@ import {
   timestamp,
 } from 'drizzle-orm/pg-core';
 
-export const operationEnum = pgEnum('operation', ['+', '-', '*', '/']);
+export const operationEnum = pgEnum('operation', ['j']);
 
 export const EquationTable = pgTable('equation', {
   id: serial('id').primaryKey(),

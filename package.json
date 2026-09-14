@@ -5,8 +5,8 @@
   "main": "index.ts",
   "scripts": {
     "setup": "npm install && gulp setup",
-    "DB:createNewMigration": "npx tsc --noEmit && gulp DB:checkSchemaAndRefreshTestDataFiles && gulp DB:validate-identifiers && rimraf migrations && npx drizzle-kit introspect:pg --config=drizzle.config.ts && gulp DB:addMeta && npx drizzle-kit generate:pg --config=drizzle.config.ts",
-    "DB:checkMigration": "npx tsc --noEmit && gulp DB:checkSchemaAndRefreshTestDataFiles && gulp DB:validate-identifiers && npx drizzle-kit check:pg --config=drizzle.config.ts",
+    "DB:createNewMigration": "npx tsc --noEmit && gulp DB:checkSchemaAndRefreshTestDataFiles && gulp DB:validate-identifiers && rimraf migrations && npx drizzle-kit introspect --config=drizzle.config.ts && gulp DB:addMeta && npx drizzle-kit generate --config=drizzle.config.ts",
+    "DB:checkMigration": "npx tsc --noEmit && gulp DB:checkSchemaAndRefreshTestDataFiles && gulp DB:validate-identifiers && npx drizzle-kit check --config=drizzle.config.ts",
     "DB:applyMigration": "npm run DB:checkMigration && gulp DB:applyMigration",
     "DB:refreshTestData": "npx tsc --noEmit && gulp DB:checkSchemaAndRefreshTestDataFiles && gulp DB:validate-identifiers && gulp DB:refreshTestData",
     "format": "prettier --write .",
@@ -24,8 +24,8 @@
   "devDependencies": {
     "@faker-js/faker": "^8.0.2",
     "dotenv": "^16.1.4",
-    "drizzle-kit": "^0.18.1",
-    "drizzle-orm": "^0.26.5",
+    "drizzle-kit": "^0.31.10",
+    "drizzle-orm": "^0.45.2",
     "gulp": "^4.0.2",
     "husky": "^8.0.3",
     "lint-staged": "^13.2.2",

@@ -14,26 +14,48 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Check for database configuration
+        id: db_config
+        env:
+          PROD_URL: ${{ secrets.DATABASE_URL_PROD }}
+          DEV_URL: ${{ secrets.DATABASE_URL_DEV }}
+        run: |
+          if [[ '${{ github.ref }}' == 'refs/heads/main' ]]; then
+            url="$PROD_URL"
+          else
+            url="$DEV_URL"
+          fi
+
+          if [[ -n "$url" ]]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+            echo "DATABASE_URL=$url" >> "$GITHUB_ENV"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No Neon connection string configured for this branch; skipping migration steps. Set DATABASE_URL_PROD / DATABASE_URL_DEV to enable them."
+          fi
+
       - name: Checkout code
+        if: steps.db_config.outputs.configured == 'true'
         uses: actions/checkout@v3
 
       - name: Set up Node.js
+        if: steps.db_config.outputs.configured == 'true'
         uses: actions/setup-node@v3
         with:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Install dependencies
+        if: steps.db_config.outputs.configured == 'true'
         run: npm ci
 
-      - name: Set DATABASE_URL
-        run: echo "DATABASE_URL=$(if [[ '${{github.ref}}' == 'refs/heads/main' ]]; then echo '${{secrets.DATABASE_URL_PROD}}'; else echo '${{secrets.DATABASE_URL_DEV}}'; fi)" >> $GITHUB_ENV
-
       - name: Run DB:createNewMigration
+        if: steps.db_config.outputs.configured == 'true'
         run: npm run DB:createNewMigration
 
       - name: Run DB:applyMigration
+        if: steps.db_config.outputs.configured == 'true'
         run: npm run DB:applyMigration
 
       - name: Run DB:refreshTestData
+        if: steps.db_config.outputs.configured == 'true' && github.ref == 'refs/heads/dev'
         run: npm run DB:refreshTestData
-        if: github.ref == 'refs/heads/dev'

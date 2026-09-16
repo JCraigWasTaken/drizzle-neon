@@ -12,13 +12,26 @@ env:
 jobs:
   test-and-upload-migration-files-for-check:
     runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 10s --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/test?sslmode=disable
+      PGSSL: disable
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
 
@@ -31,8 +44,11 @@ jobs:
           npm run test:formatting
           wait
 
-      - name: Set DATABASE_URL
-        run: echo "DATABASE_URL=$(if [[ '${{github.base_ref}}' == 'main' ]]; then echo '${{secrets.DATABASE_URL_PROD}}'; else echo '${{secrets.DATABASE_URL_DEV}}'; fi)" >> $GITHUB_ENV
+      - name: Seed the service database with the current schema
+        run: |
+          rm -rf migrations
+          npx drizzle-kit generate --config=drizzle.config.ts
+          npm run DB:applyMigration
 
       - name: Setup and check migrations
         run: |
@@ -40,7 +56,7 @@ jobs:
           npm run DB:checkMigration
 
       - name: Upload migrations folder
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: migrations
           path: ./migrations

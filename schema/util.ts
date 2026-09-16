@@ -18,7 +18,12 @@ export abstract class RefreshTestData<
   ) {
     faker.seed(seed);
     const url = `${process.env.DATABASE_URL}`;
-    this.db = drizzle(postgres(url, { ssl: 'require', max: 1 }));
+    this.db = drizzle(
+      postgres(url, {
+        ssl: process.env.PGSSL === 'disable' ? false : 'require',
+        max: 1,
+      })
+    );
   }
 
   abstract generateRow(): T;

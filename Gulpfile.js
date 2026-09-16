@@ -174,7 +174,12 @@ gulp.task('DB:applyMigration', async function (cb) {
 
   // for migrations
   const url = `${process.env.DATABASE_URL}`;
-  const db = drizzle(postgres(url, { ssl: 'require', max: 1 }));
+  const db = drizzle(
+    postgres(url, {
+      ssl: process.env.PGSSL === 'disable' ? false : 'require',
+      max: 1,
+    })
+  );
 
   // get all sql files in the migrations folder
   const migrationsFolderPath = path.resolve(__dirname, './migrations');

@@ -35,6 +35,8 @@ Before proceeding with the setup and workflow, ensure that you have the followin
 5. Go to your repository on Github and navigate to Settings > Secrets.
 6. Click on "New repository secret" and create a secret named `DATABASE_URL_DEV` with the value of the connection string you copied from Neon, adding `?sslmode=require` to the end of the string.
 
+> **Note:** These secrets are required for the push workflow (`.github/workflows/push.yml`) to apply migrations automatically. This repository is the boilerplate source and has no Neon database attached, so the secrets are intentionally unset here and the push workflow skips the migration steps (it reports a notice and the job passes). In your own repository, set `DATABASE_URL_PROD` and `DATABASE_URL_DEV` as described above — the workflow only runs the migration steps for a branch once its connection string is present, so until you do, schema changes are not applied to Neon on push.
+
 ## Workflow
 
 ### 1. Create a new test branch off of the 'dev' branch on Neon

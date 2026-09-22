@@ -22,7 +22,7 @@
     "*.{js,jsx,ts,tsx,css,less,scss,html,json,gql,md,yml,angular,vue}": "prettier --write"
   },
   "devDependencies": {
-    "@faker-js/faker": "^8.0.2",
+    "@faker-js/faker": "^9.9.0",
     "dotenv": "^16.1.4",
     "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",

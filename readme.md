@@ -8,8 +8,8 @@ This repository serves as a Node.js TypeScript project that utilizes Drizzle for
 
 Before proceeding with the setup and workflow, ensure that you have the following prerequisites:
 
-- Node.js (v18+ recommended)
-- NPM (v9+ recommended)
+- Node.js (v20.19+ recommended — v22.13+ is the active LTS; faker v10 dropped Node 18)
+- NPM (v10+ recommended)
 - Visual Studio Code
 - Prettier Extension for Visual Studio Code
 - Access to a neon database and ability to get connection information.

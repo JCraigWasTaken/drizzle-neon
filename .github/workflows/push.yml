@@ -7,7 +7,7 @@ on:
       - dev
 
 env:
-  NODE_VERSION: 18.14.2
+  NODE_VERSION: 22.23.2
 
 jobs:
   apply-migration-changes:

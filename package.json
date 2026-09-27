@@ -30,7 +30,7 @@
     "husky": "^8.0.3",
     "lint-staged": "^13.2.2",
     "postgres": "^3.3.5",
-    "prettier": "^2.8.8",
+    "prettier": "^3.9.9",
     "rimraf": "^5.0.1",
     "through2": "^4.0.2",
     "ts-morph": "^19.0.0",

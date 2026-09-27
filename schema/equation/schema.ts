@@ -27,8 +27,5 @@ export const EquationTable = pgTable('equation', {
 
 export type TEquationTableRow = InferModel<typeof EquationTable, 'insert'>;
 type TEquationTable = typeof EquationTable;
-export type TEquationTableColumns = TEquationTable extends PgTableWithColumns<
-  infer TC
->
-  ? TC
-  : never;
+export type TEquationTableColumns =
+  TEquationTable extends PgTableWithColumns<infer TC> ? TC : never;

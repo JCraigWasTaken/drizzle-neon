@@ -7,7 +7,7 @@ import postgres from 'postgres';
 
 export abstract class RefreshTestData<
   T,
-  R extends TableConfig<AnyPgColumn<{}>>
+  R extends TableConfig<AnyPgColumn<{}>>,
 > {
   protected db: PostgresJsDatabase<Record<string, never>>;
 

@@ -1,7 +1,6 @@
 const gulp = require('gulp');
 const through = require('through2');
-const ts = require('typescript');
-const { Project } = require('ts-morph');
+const { Project, SyntaxKind } = require('ts-morph');
 const fs = require('fs');
 const path = require('path');
 const util = require('util');
@@ -388,7 +387,7 @@ gulp.task('DB:validate-identifiers', function () {
       const sourceFile = project.addSourceFileAtPath(file.path);
 
       sourceFile
-        .getDescendantsOfKind(ts.SyntaxKind.CallExpression)
+        .getDescendantsOfKind(SyntaxKind.CallExpression)
         .forEach(callExpression => {
           const expression = callExpression.getExpression();
           if (
@@ -396,24 +395,20 @@ gulp.task('DB:validate-identifiers', function () {
             expression.getText() === 'pgTable'
           ) {
             callExpression.getArguments().forEach(arg => {
-              if (arg.getKind() === ts.SyntaxKind.StringLiteral) {
+              if (arg.getKind() === SyntaxKind.StringLiteral) {
                 validateIdentifier(arg.getLiteralText(), file.path);
-              } else if (
-                arg.getKind() === ts.SyntaxKind.ArrayLiteralExpression
-              ) {
+              } else if (arg.getKind() === SyntaxKind.ArrayLiteralExpression) {
                 arg.getElements().forEach(element => {
                   validateIdentifier(element.getLiteralText(), file.path);
                 });
-              } else if (
-                arg.getKind() === ts.SyntaxKind.ObjectLiteralExpression
-              ) {
+              } else if (arg.getKind() === SyntaxKind.ObjectLiteralExpression) {
                 arg.getProperties().forEach(prop => {
                   const propName = prop.getName();
                   if (propName) {
                     validateIdentifier(propName, file.path);
                     // Get the first string literal argument of the function in the property value
                     const funcArg = prop.getFirstDescendantByKind(
-                      ts.SyntaxKind.StringLiteral
+                      SyntaxKind.StringLiteral
                     );
                     if (funcArg && funcArg.getLiteralText() !== propName) {
                       throw new Error(

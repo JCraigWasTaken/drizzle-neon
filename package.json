@@ -28,7 +28,7 @@
     "drizzle-orm": "^0.45.2",
     "gulp": "^5.0.1",
     "husky": "^8.0.3",
-    "lint-staged": "^15.5.2",
+    "lint-staged": "^16.4.0",
     "postgres": "^3.3.5",
     "prettier": "^3.9.9",
     "rimraf": "^6.1.3",

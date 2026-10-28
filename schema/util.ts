@@ -2,13 +2,10 @@ import { faker } from '@faker-js/faker';
 import { PostgresJsDatabase, drizzle } from 'drizzle-orm/postgres-js';
 import 'dotenv/config';
 import { TableConfig } from 'drizzle-orm';
-import { AnyPgColumn, PgTableWithColumns } from 'drizzle-orm/pg-core';
+import { PgColumns, PgTableWithColumns } from 'drizzle-orm/pg-core';
 import postgres from 'postgres';
 
-export abstract class RefreshTestData<
-  T,
-  R extends TableConfig<AnyPgColumn<{}>>,
-> {
+export abstract class RefreshTestData<T, R extends TableConfig<PgColumns>> {
   protected db: PostgresJsDatabase<Record<string, never>>;
 
   constructor(
@@ -18,12 +15,12 @@ export abstract class RefreshTestData<
   ) {
     faker.seed(seed);
     const url = `${process.env.DATABASE_URL}`;
-    this.db = drizzle(
-      postgres(url, {
+    this.db = drizzle({
+      client: postgres(url, {
         ssl: process.env.PGSSL === 'disable' ? false : 'require',
         max: 1,
-      })
-    );
+      }),
+    });
   }
 
   abstract generateRow(): T;

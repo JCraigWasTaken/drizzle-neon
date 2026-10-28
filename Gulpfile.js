@@ -45,41 +45,58 @@ gulp.task('format', runCommand('npm run format'));
 gulp.task('setup', gulp.series('husky-install', 'husky-add', 'format'));
 
 gulp.task('DB:addMeta', function (done) {
-  const filePath = path.join(__dirname, './migrations/meta/0000_snapshot.json');
+  const migrationsDir = path.join(__dirname, './migrations');
 
-  // Check if the file exists
-  if (!fs.existsSync(filePath)) {
+  // Check if the directory exists
+  if (!fs.existsSync(migrationsDir)) {
+    throw new Error('Directory ./migrations does not exist.');
+  }
+
+  // drizzle-kit >= 1.0 writes one folder per migration:
+  // migrations/<timestamp>_<slug>/snapshot.json
+  const snapshotFiles = fs
+    .readdirSync(migrationsDir, { withFileTypes: true })
+    .filter(dirent => dirent.isDirectory())
+    .map(dirent => path.join(migrationsDir, dirent.name, 'snapshot.json'))
+    .filter(filePath => fs.existsSync(filePath));
+
+  if (snapshotFiles.length === 0) {
     throw new Error(
-      'File ./migrations/meta/0000_snapshot.json does not exist.'
+      'No migrations/<timestamp>_<slug>/snapshot.json files found.'
     );
   }
 
-  let data = fs.readFileSync(filePath, 'utf8');
+  for (const filePath of snapshotFiles) {
+    let data = fs.readFileSync(filePath, 'utf8');
 
-  let json = JSON.parse(data);
+    let json = JSON.parse(data);
 
-  // Add '_meta' property if it doesn't exist
-  if (!json._meta) {
-    json._meta = {};
+    // Add '_meta' property if it doesn't exist
+    if (!json._meta) {
+      json._meta = {};
+    }
+
+    // Add 'schemas', 'tables', and 'columns' properties to '_meta' if they don't exist
+    if (!json._meta.schemas) {
+      json._meta.schemas = {};
+    }
+
+    if (!json._meta.tables) {
+      json._meta.tables = {};
+    }
+
+    if (!json._meta.columns) {
+      json._meta.columns = {};
+    }
+
+    // Write the modified JSON back to the file
+    fs.writeFileSync(filePath, JSON.stringify(json, null, 2), 'utf8');
+
+    console.log(
+      `Added _meta to ${path.basename(path.dirname(filePath))}/snapshot.json`
+    );
   }
 
-  // Add 'schemas', 'tables', and 'columns' properties to '_meta' if they don't exist
-  if (!json._meta.schemas) {
-    json._meta.schemas = {};
-  }
-
-  if (!json._meta.tables) {
-    json._meta.tables = {};
-  }
-
-  if (!json._meta.columns) {
-    json._meta.columns = {};
-  }
-
-  // Write the modified JSON back to the file
-  fs.writeFileSync(filePath, JSON.stringify(json, null, 2), 'utf8');
-
-  console.log('Added _meta to 0000_snapshot.json');
   done();
 });
 
@@ -173,35 +190,50 @@ gulp.task('DB:applyMigration', async function (cb) {
 
   // for migrations
   const url = `${process.env.DATABASE_URL}`;
-  const db = drizzle(
-    postgres(url, {
+  const db = drizzle({
+    client: postgres(url, {
       ssl: process.env.PGSSL === 'disable' ? false : 'require',
       max: 1,
-    })
-  );
+    }),
+  });
 
   // get all sql files in the migrations folder
+  // (drizzle-kit >= 1.0 layout: <folder>/migration.sql, plus legacy top-level .sql)
   const migrationsFolderPath = path.resolve(__dirname, './migrations');
-  const files = fs.readdirSync(migrationsFolderPath);
+  const files = [];
 
-  for (const file of files) {
-    if (path.extname(file) === '.sql') {
-      const filePath = path.join(migrationsFolderPath, file);
-      let fileContent = fs.readFileSync(filePath, 'utf8');
-
-      // Check if the file is fully commented out
-      const isCommentedOut = isFullyCommented(fileContent);
-
-      if (isCommentedOut) {
-        console.log(
-          `Migration file ${file} is completely commented out, removing "statement-breakpoint" line.`
-        );
-        fileContent = fileContent
-          .split('\n')
-          .filter(line => line.trim() !== '--> statement-breakpoint')
-          .join('\n');
-        fs.writeFileSync(filePath, fileContent, 'utf8');
+  for (const entry of fs.readdirSync(migrationsFolderPath, {
+    withFileTypes: true,
+  })) {
+    if (entry.isFile() && path.extname(entry.name) === '.sql') {
+      files.push(path.join(migrationsFolderPath, entry.name));
+    } else if (entry.isDirectory()) {
+      const nested = path.join(
+        migrationsFolderPath,
+        entry.name,
+        'migration.sql'
+      );
+      if (fs.existsSync(nested)) {
+        files.push(nested);
       }
+    }
+  }
+
+  for (const filePath of files) {
+    let fileContent = fs.readFileSync(filePath, 'utf8');
+
+    // Check if the file is fully commented out
+    const isCommentedOut = isFullyCommented(fileContent);
+
+    if (isCommentedOut) {
+      console.log(
+        `Migration file ${filePath} is completely commented out, removing "statement-breakpoint" line.`
+      );
+      fileContent = fileContent
+        .split('\n')
+        .filter(line => line.trim() !== '--> statement-breakpoint')
+        .join('\n');
+      fs.writeFileSync(filePath, fileContent, 'utf8');
     }
   }
 

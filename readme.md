@@ -39,6 +39,8 @@ Before proceeding with the setup and workflow, ensure that you have the followin
 
 ## Workflow
 
+> **Upgrading from drizzle-kit 0.31 / drizzle-orm 0.45:** run `npx drizzle-kit up` once, before any task that deletes `migrations/`. The 1.0 migrator refuses to apply a regenerated folder to a database whose migrations table was written by 0.4x ("…do not match any local migration"). A dev database in that state either gets the up-converted folder or gets dropped and recreated.
+
 ### 1. Create a new test branch off of the 'dev' branch on Neon
 
 Create a new branch on the Neon with 'dev' as it's parent branch. This will provide you with a separate environment for making and testing changes to the database schema.

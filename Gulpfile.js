@@ -100,6 +100,32 @@ gulp.task('DB:addMeta', function (done) {
   done();
 });
 
+gulp.task('DB:checkOldLayout', function (done) {
+  const oldJournal = path.join(
+    __dirname,
+    'migrations',
+    'meta',
+    '_journal.json'
+  );
+
+  // drizzle-orm 1.0's migrate() upgrades the migrations table once (upToV1)
+  // and refuses to continue when database rows do not match a local migration.
+  // Regenerating the folder (DB:createNewMigration does rimraf migrations) on a
+  // machine whose database predates the 1.0 upgrade leaves the database
+  // unrecoverable, so fail early and point at the working remediation.
+  if (fs.existsSync(oldJournal)) {
+    done(
+      new Error(
+        'Old-layout migrations folder. Run "npx drizzle-kit up" first so the ' +
+          'database migrations table can be upgraded, then retry.'
+      )
+    );
+    return;
+  }
+
+  done();
+});
+
 gulp.task('DB:checkSchemaAndRefreshTestDataFiles', function (done) {
   console.log('Checking schema and refresh test data files');
 

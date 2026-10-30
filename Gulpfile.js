@@ -126,6 +126,150 @@ gulp.task('DB:checkOldLayout', function (done) {
   done();
 });
 
+gulp.task('DB:checkMigrationTable', async function (cb) {
+  // drizzle-orm 1.0's migrate() upgrades a 0.31-era migrations table (no
+  // name/applied_at columns) by matching every database row to a local
+  // migration (created_at second, sha256 hash tie-break) and refuses to run
+  // when a row matches nothing. The local folder is gitignored, so a fresh
+  // clone (and CI) has no folder at all and every database row is
+  // unmatched — the case DB:checkOldLayout (folder on disk) cannot see.
+  // Check the database itself, before migrations are deleted (rimraf) or
+  // applied, and fail early with the working remediation.
+  const dotenv = require('dotenv');
+  const crypto = require('crypto');
+  const postgres = require('postgres');
+
+  dotenv.config();
+
+  const url = process.env.DATABASE_URL;
+  if (!url) {
+    cb(
+      new Error(
+        'DATABASE_URL is not set; cannot check the database migrations table.'
+      )
+    );
+    return;
+  }
+
+  // Same local-migration shape as drizzle-orm's readMigrationFiles():
+  // one folder per migration, <folder>/migration.sql, folder name =
+  // <14-digit UTC timestamp>_<slug>.
+  const migrationsDir = path.join(__dirname, 'migrations');
+  const localMigrations = [];
+  if (fs.existsSync(migrationsDir)) {
+    for (const dirent of fs.readdirSync(migrationsDir, {
+      withFileTypes: true,
+    })) {
+      if (!dirent.isDirectory()) continue;
+      const filePath = path.join(migrationsDir, dirent.name, 'migration.sql');
+      if (!fs.existsSync(filePath)) continue;
+      const digits = dirent.name.slice(0, 14);
+      localMigrations.push({
+        name: dirent.name,
+        folderMillis: Date.UTC(
+          parseInt(digits.slice(0, 4), 10),
+          parseInt(digits.slice(4, 6), 10) - 1,
+          parseInt(digits.slice(6, 8), 10),
+          parseInt(digits.slice(8, 10), 10),
+          parseInt(digits.slice(10, 12), 10),
+          parseInt(digits.slice(12, 14), 10)
+        ),
+        hash: crypto
+          .createHash('sha256')
+          .update(fs.readFileSync(filePath, 'utf8'))
+          .digest('hex'),
+      });
+    }
+  }
+
+  const sql = postgres(url, {
+    ssl: process.env.PGSSL === 'disable' ? false : 'require',
+    max: 1,
+  });
+
+  try {
+    const tables = await sql`
+      SELECT 1 FROM information_schema.tables
+      WHERE table_schema = 'drizzle'
+      AND table_name = '__drizzle_migrations'
+    `;
+    if (tables.length === 0) {
+      console.log(
+        'No drizzle.__drizzle_migrations table in the database; nothing to check.'
+      );
+      cb();
+      return;
+    }
+
+    const columns = await sql`
+      SELECT column_name FROM information_schema.columns
+      WHERE table_schema = 'drizzle'
+      AND table_name = '__drizzle_migrations'
+    `;
+    if (columns.some(column => column.column_name === 'name')) {
+      // v1 table: the 1.0 migrator matches local migrations by name and
+      // never throws for database rows, so every row is accounted for.
+      console.log(
+        'Database migrations table is v1 (name column present); database check passed.'
+      );
+      cb();
+      return;
+    }
+
+    // v0 table (drizzle-kit 0.31 era): mirror upToV1's row matching.
+    const rows = await sql`
+      SELECT id, hash, created_at FROM drizzle.__drizzle_migrations
+      ORDER BY id ASC
+    `;
+    const byMillis = new Map();
+    const byHash = new Map();
+    for (const lm of localMigrations) {
+      if (!byMillis.has(lm.folderMillis)) byMillis.set(lm.folderMillis, []);
+      byMillis.get(lm.folderMillis).push(lm);
+      byHash.set(lm.hash, lm);
+    }
+    const unmatchedIds = [];
+    for (const row of rows) {
+      const stringified = String(row.created_at);
+      const millis = Number(
+        stringified.substring(0, stringified.length - 3) + '000'
+      );
+      const candidates = byMillis.get(millis);
+      let matched;
+      if (candidates && candidates.length === 1) matched = candidates[0];
+      else if (candidates && candidates.length > 1)
+        matched = candidates.find(candidate => candidate.hash === row.hash);
+      else matched = byHash.get(row.hash);
+      if (!matched) unmatchedIds.push(row.id);
+    }
+    if (unmatchedIds.length > 0) {
+      cb(
+        new Error(
+          `Database migrations table (drizzle-kit 0.31 era) holds ${unmatchedIds.length} ` +
+            `migration(s) (ids: ${unmatchedIds.join(', ')}) that the local migrations ` +
+            'folder cannot account for; the 1.0 migrator will refuse to apply. ' +
+            'One-time remedy (works on a fresh clone, without a local migrations folder):\n' +
+            '  1. git checkout main (main is still on drizzle-kit 0.31)\n' +
+            '  2. npx drizzle-kit generate (creates the 0.31-layout folder; skip if you already have it)\n' +
+            '  3. git checkout <this branch> (the gitignored folder stays on disk)\n' +
+            "  4. npx drizzle-kit up (the branch's drizzle-kit 1.0 converts the folder)\n" +
+            '  5. npm run DB:applyMigration (the 1.0 migrator upgrades the database table)\n' +
+            'In a dev database you may instead drop and recreate the database.'
+        )
+      );
+      return;
+    }
+    console.log(
+      `All ${rows.length} database migration(s) match the local migrations folder; database check passed.`
+    );
+    cb();
+  } catch (err) {
+    cb(err);
+  } finally {
+    await sql.end().catch(() => {});
+  }
+});
+
 gulp.task('DB:checkSchemaAndRefreshTestDataFiles', function (done) {
   console.log('Checking schema and refresh test data files');
 

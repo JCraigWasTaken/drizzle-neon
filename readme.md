@@ -39,7 +39,17 @@ Before proceeding with the setup and workflow, ensure that you have the followin
 
 ## Workflow
 
-> **Upgrading from drizzle-kit 0.31 / drizzle-orm 0.45:** run `npx drizzle-kit up` once, before any task that deletes `migrations/`. The 1.0 migrator refuses to apply a regenerated folder to a database whose migrations table was written by 0.4x ("…do not match any local migration"). A dev database in that state either gets the up-converted folder or gets dropped and recreated.
+> **Upgrading from drizzle-kit 0.31 / drizzle-orm 0.45:** the 1.0 migrator upgrades the `drizzle.__drizzle_migrations` table once and refuses to run when a database row does not match a local migration ("…do not match any local migration"). `DB:createNewMigration` and `DB:applyMigration` check the database for that state before deleting or applying migrations, and fail early with the remediation when it is present.
+>
+> One-time remedy (works on a fresh clone — `migrations/` is gitignored, so it has no folder there):
+>
+> 1. `git checkout main` — main is still on drizzle-kit 0.31
+> 2. `npx drizzle-kit generate` — creates the 0.31-layout folder (skip if you already have it)
+> 3. `git checkout <your branch>` — the gitignored folder stays on disk
+> 4. `npx drizzle-kit up` — the branch's drizzle-kit 1.0 converts the folder
+> 5. `npm run DB:applyMigration` — the 1.0 migrator upgrades the database table
+>
+> After that, `npm run DB:createNewMigration` is safe to run. In a dev database you may instead drop and recreate the database.
 
 ### 1. Create a new test branch off of the 'dev' branch on Neon
 

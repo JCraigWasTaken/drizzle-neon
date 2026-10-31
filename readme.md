@@ -47,7 +47,9 @@ Before proceeding with the setup and workflow, ensure that you have the followin
 > 2. `npx drizzle-kit generate` — creates the 0.31-layout folder (skip if you already have it)
 > 3. `git checkout <your branch>` — the gitignored folder stays on disk
 > 4. `npx drizzle-kit up` — the branch's drizzle-kit 1.0 converts the folder
-> 5. `npm run DB:applyMigration` — the 1.0 migrator upgrades the database table
+> 5. If the database was built by `DB:createNewMigration` on an empty database (the shape the README workflow and the push workflow create), the empty baseline migration cannot be regenerated, so delete its row first (no schema is lost; the row is empty):
+>    `DELETE FROM drizzle.__drizzle_migrations WHERE id = 1;`
+> 6. `npm run DB:applyMigration` — the 1.0 migrator upgrades the database table and backfills the name
 >
 > After that, `npm run DB:createNewMigration` is safe to run. In a dev database you may instead drop and recreate the database.
 

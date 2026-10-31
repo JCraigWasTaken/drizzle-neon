@@ -253,7 +253,9 @@ gulp.task('DB:checkMigrationTable', async function (cb) {
             '  2. npx drizzle-kit generate (creates the 0.31-layout folder; skip if you already have it)\n' +
             '  3. git checkout <this branch> (the gitignored folder stays on disk)\n' +
             "  4. npx drizzle-kit up (the branch's drizzle-kit 1.0 converts the folder)\n" +
-            '  5. npm run DB:applyMigration (the 1.0 migrator upgrades the database table)\n' +
+            '  5. If the database was built by DB:createNewMigration on an empty database (the shape the README workflow and the push workflow create), the empty baseline migration cannot be regenerated, so delete its row first (no schema is lost; the row is empty):\n' +
+            '     DELETE FROM drizzle.__drizzle_migrations WHERE id = 1;\n' +
+            '  6. npm run DB:applyMigration (the 1.0 migrator upgrades the database table and backfills the name)\n' +
             'In a dev database you may instead drop and recreate the database.'
         )
       );

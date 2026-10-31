@@ -8,7 +8,7 @@ This repository serves as a Node.js TypeScript project that utilizes Drizzle for
 
 Before proceeding with the setup and workflow, ensure that you have the following prerequisites:
 
-- Node.js (v20.19+ recommended — v22.13+ is the active LTS; faker v10 dropped Node 18)
+- Node.js (v22.13+; the CI workflow runs v22.23.2; faker v10 dropped Node 18)
 - NPM (v10+ recommended)
 - Visual Studio Code
 - Prettier Extension for Visual Studio Code
@@ -38,6 +38,20 @@ Before proceeding with the setup and workflow, ensure that you have the followin
 > **Note:** These secrets are required for the push workflow (`.github/workflows/push.yml`) to apply migrations automatically. This repository is the boilerplate source and has no Neon database attached, so the secrets are intentionally unset here and the push workflow skips the migration steps (it reports a notice and the job passes). In your own repository, set `DATABASE_URL_PROD` and `DATABASE_URL_DEV` as described above — the workflow only runs the migration steps for a branch once its connection string is present, so until you do, schema changes are not applied to Neon on push.
 
 ## Workflow
+
+> **Upgrading from drizzle-kit 0.31 / drizzle-orm 0.45:** the 1.0 migrator upgrades the `drizzle.__drizzle_migrations` table once and refuses to run when a database row does not match a local migration ("…do not match any local migration"). `DB:createNewMigration` and `DB:applyMigration` check the database for that state before deleting or applying migrations, and fail early with the remediation when it is present.
+>
+> One-time remedy (works on a fresh clone — `migrations/` is gitignored, so it has no folder there):
+>
+> 1. `git checkout main` — main is still on drizzle-kit 0.31
+> 2. `npx drizzle-kit generate` — creates the 0.31-layout folder (skip if you already have it)
+> 3. `git checkout <your branch>` — the gitignored folder stays on disk
+> 4. `npx drizzle-kit up` — the branch's drizzle-kit 1.0 converts the folder
+> 5. If the database was built by `DB:createNewMigration` on an empty database (the shape the README workflow and the push workflow create), the empty baseline migration cannot be regenerated, so delete its row first (no schema is lost; the row is empty):
+>    `DELETE FROM drizzle.__drizzle_migrations WHERE id = 1;`
+> 6. `npm run DB:applyMigration` — the 1.0 migrator upgrades the database table and backfills the name
+>
+> After that, `npm run DB:createNewMigration` is safe to run. In a dev database you may instead drop and recreate the database.
 
 ### 1. Create a new test branch off of the 'dev' branch on Neon
 

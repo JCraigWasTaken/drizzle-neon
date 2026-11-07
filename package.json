@@ -34,7 +34,7 @@
     "prettier": "^3.9.9",
     "rimraf": "^6.1.4",
     "through2": "^4.0.2",
-    "ts-morph": "^27.0.0",
+    "ts-morph": "^28.0.0",
     "ts-node": "^10.9.1",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3"

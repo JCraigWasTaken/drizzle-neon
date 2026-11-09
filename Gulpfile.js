@@ -137,7 +137,9 @@ gulp.task('DB:checkMigrationTable', async function (cb) {
   // applied, and fail early with the working remediation.
   const dotenv = require('dotenv');
   const crypto = require('crypto');
-  const postgres = require('postgres');
+  // postgres v4 is an ES module; require() returns its namespace, so the
+  // constructor lives at .default (works on the CI's Node 22.12+).
+  const postgres = require('postgres').default;
 
   dotenv.config();
 
@@ -334,7 +336,9 @@ gulp.task('DB:applyMigration', async function (cb) {
   const dotenv = require('dotenv');
   const tsNode = require('ts-node');
   const { migrate } = require('drizzle-orm/postgres-js/migrator');
-  const postgres = require('postgres');
+  // postgres v4 is an ES module; require() returns its namespace, so the
+  // constructor lives at .default (works on the CI's Node 22.12+).
+  const postgres = require('postgres').default;
   const { drizzle } = require('drizzle-orm/postgres-js');
 
   tsNode.register({

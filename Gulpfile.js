@@ -17,7 +17,7 @@ const runCommand = command => {
   };
 };
 
-gulp.task('husky-install', runCommand('npx husky install'));
+gulp.task('husky-install', runCommand('npx husky'));
 gulp.task('husky-add', function (cb) {
   const huskyFilePath = path.join('.husky', 'pre-commit');
   const command = 'npm run precommit';
@@ -28,14 +28,14 @@ gulp.task('husky-add', function (cb) {
     }
 
     if (!data.includes(command)) {
-      exec(
-        `npx husky add ${huskyFilePath} "${command}"`,
-        function (err, stdout, stderr) {
-          console.log(stdout);
-          console.log(stderr);
-          cb(err);
+      // husky v9 dropped `husky add` (deprecated no-op); write the hook file directly.
+      fs.writeFile(huskyFilePath, `${command}\n`, function (err) {
+        if (err) {
+          return cb(err);
         }
-      );
+        console.log(`wrote ${huskyFilePath}`);
+        cb();
+      });
     } else {
       cb();
     }

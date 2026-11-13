@@ -8,7 +8,7 @@ This repository serves as a Node.js TypeScript project that utilizes Drizzle for
 
 Before proceeding with the setup and workflow, ensure that you have the following prerequisites:
 
-- Node.js (v22.13+; the CI workflow runs v22.23.2; faker v10 dropped Node 18)
+- Node.js (v22.22.1+; the CI workflow runs v22.23.2; lint-staged v17 dropped Node 20 and requires 22.22.1, faker v10 dropped Node 18)
 - NPM (v10+ recommended)
 - Visual Studio Code
 - Prettier Extension for Visual Studio Code

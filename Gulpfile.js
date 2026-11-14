@@ -1,5 +1,7 @@
 const gulp = require('gulp');
-const through = require('through2');
+// through2 v5 is an ES module; require() returns its namespace, so the
+// factory lives at .default (works on the CI's Node 22.12+).
+const through = require('through2').default;
 const { Project, SyntaxKind } = require('ts-morph');
 const fs = require('fs');
 const path = require('path');
